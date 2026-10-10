@@ -1,120 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0a0a0a">
-  <title>FREEDOM — Take Control</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="FREEDOM — Take control of your debts, expenses and savings.">
+<title>FREEDOM — Personal Finance</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="stylesheet" href="./style.css">
+<style>
+.freedom-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.freedom-logo{font-size:28px;font-weight:900;letter-spacing:-1.8px}.freedom-logo span{color:#ff3434}
+.header-caption{color:#858585;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;margin-top:5px}
+.privacy-button{width:45px;min-width:45px;height:45px;padding:0;border-radius:50%;font-size:18px}
+.welcome-block{margin:20px 0 25px}.welcome-block h2{font-size:29px;letter-spacing:-1.2px;margin-bottom:7px}
+.welcome-block p{color:#858585;font-size:13px}
+.eyebrow{color:#858585;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:700}
+.total-debt{position:relative;overflow:hidden;background:#0b0b0b;border:1px solid #393939;border-radius:22px;padding:25px 21px;margin-bottom:15px}
+.debt-total{margin-top:13px;font-size:clamp(30px,8vw,42px);font-weight:900;letter-spacing:-1.8px;color:#ff3434;overflow-wrap:anywhere}
+.debt-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:20px;padding-top:14px;border-top:1px solid #303030;color:#888;font-size:11px}
+.dot-pattern{color:#777;letter-spacing:4px;font-size:15px}
+.stat-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.stat-symbol{display:grid;place-items:center;width:31px;height:31px;border:1px solid #333;border-radius:10px;font-weight:800}
+.stat-amount{margin-top:14px;font-size:clamp(19px,5vw,25px);font-weight:850;letter-spacing:-.8px;overflow-wrap:anywhere}
+.stat-caption{color:#858585;font-size:11px;margin-top:5px}.income-color{color:#32d583}.expense-color{color:#ff3434}
+.quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.quick-action{min-height:82px;text-align:left;background:#0c0c0c;border:1px solid #292929;border-radius:15px;padding:15px}
+.quick-action .action-icon{display:block;font-size:20px;margin-bottom:8px}.quick-action strong{display:block;font-size:13px}
+.quick-action small{display:block;margin-top:3px;color:#858585;font-size:11px}
+.section-link{color:#aaa;background:transparent;border:0;padding:5px;font-size:12px}
+.activity-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #242424}
+.activity-item:last-child{border-bottom:0}.activity-icon{width:40px;height:40px;flex-shrink:0;display:grid;place-items:center;background:#1a1a1a;border:1px solid #303030;border-radius:12px;font-size:16px}
+.activity-info{flex:1;min-width:0}.activity-info strong{display:block;font-size:13px;overflow-wrap:anywhere}
+.activity-info small{display:block;color:#858585;margin-top:4px;font-size:11px}
+.activity-amount{font-size:13px;font-weight:800;white-space:nowrap}
+.empty-state{padding:22px 12px;text-align:center;color:#858585;font-size:13px}
+.screen{display:none;animation:appear 180ms ease-out}.screen.active{display:block}
+.screen-heading{margin:10px 0 20px}.screen-heading h2{font-size:28px;letter-spacing:-1px}
+.screen-heading p{color:#858585;font-size:12px;margin-top:7px}.form-card{margin-top:15px}
+.record-list{display:grid;gap:10px;margin-top:15px}.record-card{background:#101010;border:1px solid #303030;border-radius:15px;padding:15px}
+.record-card h3{font-size:14px;margin-bottom:7px}.record-card p{color:#858585;font-size:12px;margin-top:4px}
+.record-card .record-value{margin-top:8px;font-size:20px;font-weight:850;overflow-wrap:anywhere}.record-card .record-delete{margin-top:12px}
+.backup-buttons{display:grid;gap:10px}.backup-buttons button{width:100%}.notice{margin-top:12px}
+.bottom-nav button span{display:block;font-size:18px;line-height:1.2;margin-bottom:4px}.bottom-nav button small{font-size:10px}
+@keyframes appear{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+</style>
 </head>
 <body>
-  <header>
-    <div class="brand">FREEDOM<span>.</span></div>
-    <button id="hideButton" aria-label="Hide amounts">◉</button>
-  </header>
-
-  <main>
-    <p class="eyebrow">YOUR FINANCIAL LIFE</p>
-    <h1>Take control.<br>Find your freedom.</h1>
-
-    <section class="card primary">
-      <p>Total debt</p>
-      <h2 id="totalDebt">₹0</h2>
-      <small>Track your progress, one step at a time.</small>
-    </section>
-
-    <div class="grid">
-      <section class="card">
-        <p>Monthly income</p>
-        <h3 id="totalIncome">₹0</h3>
-      </section>
-      <section class="card">
-        <p>Monthly expenses</p>
-        <h3 id="totalExpenses">₹0</h3>
-      </section>
-    </div>
-
-    <section class="card">
-      <h2>Your debts</h2>
-      <div id="debtList"><p class="muted">No debts added yet.</p></div>
-      <button id="addDebt" class="action">+ Add a debt</button>
-      <form id="debtForm" hidden>
-        <label>Debt name
-          <input id="debtName" required placeholder="e.g. Personal loan">
-        </label>
-        <label>Outstanding balance (₹)
-          <input id="debtAmount" type="number" min="0.01" step="0.01" required>
-        </label>
-        <label>Interest rate (% per year)
-          <input id="debtRate" type="number" min="0" step="0.01" value="0">
-        </label>
-        <button class="action" type="submit">Save debt</button>
-        <button class="secondary" type="button" id="cancelDebt">Cancel</button>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>Add an expense</h2>
-      <form id="expenseForm">
-        <label>Description
-          <input id="expenseName" required placeholder="e.g. Groceries">
-        </label>
-        <label>Amount (₹)
-          <input id="expenseAmount" type="number" min="0.01" step="0.01" required>
-        </label>
-        <button class="action" type="submit">Add expense</button>
-      </form>
-      <div id="expenseList"></div>
-    </section>
-
-    <section class="card">
-      <h2>Monthly income</h2>
-      <form id="incomeForm">
-        <label>Income source
-          <input id="incomeName" required placeholder="e.g. Salary">
-        </label>
-        <label>Amount (₹)
-          <input id="incomeAmount" type="number" min="0.01" step="0.01" required>
-        </label>
-        <button class="action" type="submit">Add income</button>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>Your savings goal</h2>
-      <form id="goalForm">
-        <label>Goal name
-          <input id="goalName" required placeholder="e.g. Emergency fund">
-        </label>
-        <label>Target amount (₹)
-          <input id="goalAmount" type="number" min="1" step="0.01" required>
-        </label>
-        <button class="action" type="submit">Save goal</button>
-      </form>
-      <div id="goalList"></div>
-    </section>
-
-    <section class="card">
-      <h2>Data & privacy</h2>
-      <p class="muted">Your records are stored in this browser on this device. They are not automatically backed up or synced.</p>
-      <button id="exportData" class="action">Export backup</button>
-      <label class="fileLabel">Restore backup
-        <input type="file" id="importData" accept=".json,application/json">
-      </label>
-      <button id="clearData" class="danger">Delete all app data</button>
-    </section>
-  </main>
-
-  <footer>FREEDOM · Your journey, your future.</footer>
-
-  <script src="script.js"></script>
-  <script>
-    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
-      });
-    }
-  </script>
+<header class="freedom-header"><div><div class="freedom-logo">FREEDOM<span>.</span></div><div class="header-caption">Personal finance system</div></div><button id="hideButton" class="privacy-button" type="button" aria-label="Hide financial amounts" title="Hide or reveal amounts">◉</button></header>
+<main class="container">
+<section id="dashboardScreen" class="screen active">
+<div class="welcome-block"><div class="eyebrow">YOUR FINANCIAL SPACE</div><h2>Take control.<br>Find your freedom.</h2><p id="todayDate">Your money, your decisions.</p></div>
+<article class="total-debt"><div class="eyebrow">TOTAL OUTSTANDING DEBT</div><div id="totalDebt" class="debt-total amount">₹0</div><div class="debt-footer"><span>Every step counts.</span><span class="dot-pattern">● ● ● ●</span></div></article>
+<div class="section-heading"><h2>Overview</h2><span class="eyebrow">THIS MONTH</span></div>
+<div class="stats-grid">
+<article class="stat-card"><div class="stat-top"><span class="eyebrow">INCOME</span><span class="stat-symbol income-color">↗</span></div><div id="totalIncome" class="stat-amount income-color amount">₹0</div><div class="stat-caption">Money received</div></article>
+<article class="stat-card"><div class="stat-top"><span class="eyebrow">EXPENSES</span><span class="stat-symbol expense-color">↘</span></div><div id="totalExpenses" class="stat-amount expense-color amount">₹0</div><div class="stat-caption">Money spent</div></article>
+</div>
+<div class="section-heading"><h2>Quick actions</h2></div>
+<div class="quick-grid">
+<button class="quick-action" data-go="debts" type="button"><span class="action-icon">＋</span><strong>Add debt</strong><small>Track a loan</small></button>
+<button class="quick-action" data-go="activity" type="button"><span class="action-icon">↘</span><strong>Add expense</strong><small>Record spending</small></button>
+<button class="quick-action" data-go="activity" type="button"><span class="action-icon income-color">↗</span><strong>Add income</strong><small>Record earnings</small></button>
+<button class="quick-action" data-go="savings" type="button"><span class="action-icon">◎</span><strong>Savings goals</strong><small>Build your future</small></button>
+</div>
+<div class="section-heading"><h2>Recent activity</h2><button class="section-link" data-go="activity" type="button">View all →</button></div>
+<article class="card"><div id="recentActivity"><div class="empty-state">Your financial activity will appear here.</div></div></article>
+<div class="section-heading"><h2>Financial tools</h2></div>
+<article class="card"><div class="eyebrow">YOUR NEXT STEP</div><h3 style="margin-top:10px;">Build better money habits.</h3><p style="margin-top:8px;">Track every rupee, understand your spending and work toward becoming debt-free.</p><button class="primary-button" style="width:100%;margin-top:15px;" data-go="debts" type="button">Manage my debts →</button></article>
+</section>
+<section id="debtsScreen" class="screen">
+<div class="screen-heading"><div class="eyebrow">FINANCIAL CONTROL / 01</div><h2>My debts.</h2><p>Know what you owe. Plan what comes next.</p></div>
+<article class="total-debt"><div class="eyebrow">OUTSTANDING BALANCE</div><div id="debtPageTotal" class="debt-total amount">₹0</div></article>
+<article class="card form-card"><h3>Add a debt</h3><p style="margin:7px 0 17px;">Enter your current outstanding balance.</p>
+<form id="debtForm"><div><label for="debtName">Loan or debt name</label><input id="debtName" name="debtName" placeholder="e.g. Personal loan" required maxlength="100"></div><div><label for="debtAmount">Outstanding amount (₹)</label><input id="debtAmount" name="debtAmount" type="number" min="0.01" step="0.01" placeholder="100000" required></div><div><label for="debtRate">Annual interest rate (%)</label><input id="debtRate" name="debtRate" type="number" min="0" max="100" step="0.01" placeholder="10.5" value="0" required></div><button class="primary-button" type="submit">+ Save debt</button></form></article>
+<div class="section-heading"><h2>All debts</h2></div><div id="debtList" class="record-list"><div class="empty-state">No debts added yet.</div></div>
+<article class="card" style="margin-top:20px;"><div class="eyebrow">COMING NEXT</div><h3 style="margin-top:8px;">Debt repayment planner</h3><p style="margin-top:8px;">We'll add Snowball and Avalanche repayment planning after confirming the dashboard and data handling work correctly.</p></article>
+</section>
+<section id="activityScreen" class="screen">
+<div class="screen-heading"><div class="eyebrow">FINANCIAL CONTROL / 02</div><h2>Activity.</h2><p>Every rupee has a place.</p></div>
+<article class="card form-card"><h3>Record an expense</h3><form id="expenseForm" style="margin-top:16px;"><div><label for="expenseName">Expense description</label><input id="expenseName" name="expenseName" placeholder="e.g. Groceries" required maxlength="100"></div><div><label for="expenseAmount">Amount (₹)</label><input id="expenseAmount" name="expenseAmount" type="number" min="0.01" step="0.01" placeholder="500" required></div><button class="primary-button" type="submit">+ Save expense</button></form></article>
+<article class="card form-card"><h3>Record income</h3><form id="incomeForm" style="margin-top:16px;"><div><label for="incomeName">Income source</label><input id="incomeName" name="incomeName" placeholder="e.g. Salary" required maxlength="100"></div><div><label for="incomeAmount">Amount (₹)</label><input id="incomeAmount" name="incomeAmount" type="number" min="0.01" step="0.01" placeholder="25000" required><button class="primary-button" type="submit">+ Save income</button></div></form></article>
+<div class="section-heading"><h2>Recent records</h2></div><div id="activityList" class="record-list"><div class="empty-state">No activity recorded yet.</div></div>
+</section>
+<section id="savingsScreen" class="screen">
+<div class="screen-heading"><div class="eyebrow">FINANCIAL CONTROL / 03</div><h2>Savings.</h2><p>Small steps. Bigger possibilities.</p></div>
+<article class="card form-card"><h3>Create a savings goal</h3><form id="goalForm" style="margin-top:16px;"><div><label for="goalName">Goal name</label><input id="goalName" name="goalName" placeholder="e.g. Emergency fund" required maxlength="100"></div><div><label for="goalAmount">Target amount (₹)</label><input id="goalAmount" name="goalAmount" type="number" min="0.01" step="0.01" placeholder="50000" required></div><button class="primary-button" type="submit">+ Create goal</button></form></article>
+<div class="section-heading"><h2>My goals</h2></div><div id="goalList" class="record-list"><div class="empty-state">No savings goals yet.</div></div>
+<article class="card" style="margin-top:20px;"><div class="eyebrow">YOUR SAVINGS PLAN</div><h3 style="margin-top:8px;">Stay consistent.</h3><p style="margin-top:8px;">Your first goal can be an emergency fund, a major purchase or a future expense.</p></article>
+</section>
+<section id="settingsScreen" class="screen">
+<div class="screen-heading"><div class="eyebrow">YOUR ACCOUNT / 04</div><h2>Settings.</h2><p>Keep your financial records under control.</p></div>
+<article class="card"><h3>Backup &amp; restore</h3><p style="margin:8px 0 16px;">Export your financial records before changing phones or clearing browser data.</p><div class="backup-buttons"><button id="exportData" type="button">↓ Export backup</button><label for="importData" style="margin-top:8px;">Restore a backup file</label><input id="importData" type="file" accept=".json,application/json"></div><p id="backupMessage" class="notice" hidden></p></article>
+<article class="card"><div class="eyebrow">PRIVACY</div><h3 style="margin-top:8px;">Your data stays on this device.</h3><p style="margin-top:8px;">This prototype uses browser storage. It does not provide encrypted financial storage or automatic cloud backup.</p></article>
+<article class="card" style="border-color:#572222;"><div class="eyebrow expense-color">CAUTION</div><h3 style="margin-top:8px;">Delete all financial data</h3><p style="margin:8px 0 15px;">This removes the records saved by FREEDOM in this browser. Export a backup first if you need to keep them.</p><button id="clearData" class="danger-button" type="button">Delete all data</button></article>
+<p style="color:#666;font-size:11px;margin-top:20px;">FREEDOM FINANCE · PERSONAL USE</p>
+</section>
+</main>
+<nav class="bottom-nav" aria-label="Main navigation">
+<button class="active" data-screen="dashboard" type="button"><span>⌂</span><small>Home</small></button>
+<button data-screen="debts" type="button"><span>−</span><small>Debts</small></button>
+<button data-screen="activity" type="button"><span>↗</span><small>Activity</small></button>
+<button data-screen="savings" type="button"><span>◎</span><small>Savings</small></button>
+<button data-screen="settings" type="button"><span>⋯</span><small>More</small></button>
+</nav>
+<script src="./script.js"></script>
+<script>
+(() => {
+ const screens=["dashboard","debts","activity","savings","settings"];
+ function showScreen(name){
+  if(!screens.includes(name))return;
+  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===name+"Screen"));
+  document.querySelectorAll("[data-screen]").forEach(b=>{const active=b.dataset.screen===name;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  window.scrollTo({top:0,behavior:"smooth"});
+  try{sessionStorage.setItem("freedom-active-screen",name)}catch(_){}
+ }
+ document.querySelectorAll("[data-screen]").forEach(b=>b.addEventListener("click",()=>showScreen(b.dataset.screen)));
+ document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>showScreen(b.dataset.go)));
+ try{const p=sessionStorage.getItem("freedom-active-screen");if(p&&screens.includes(p))showScreen(p)}catch(_){}
+ const date=document.getElementById("todayDate");
+ if(date)date.textContent=new Intl.DateTimeFormat("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date());
+ const hide=document.getElementById("hideButton");
+ if(hide)hide.addEventListener("click",()=>{const hidden=document.body.classList.toggle("amounts-hidden");hide.textContent=hidden?"◎":"◉";hide.setAttribute("aria-label",hidden?"Reveal financial amounts":"Hide financial amounts")});
+})();
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(e=>console.warn("Service worker registration failed:",e)));
+</script>
 </body>
 </html>
