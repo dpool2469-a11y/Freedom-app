@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>FREEDOM — Take Control</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">FREEDOM<span>.</span></div>
+    <button id="hideButton" aria-label="Hide amounts">◉</button>
+  </header>
+
+  <main>
+    <p class="eyebrow">YOUR FINANCIAL LIFE</p>
+    <h1>Take control.<br>Find your freedom.</h1>
+
+    <section class="card primary">
+      <p>Total debt</p>
+      <h2 id="totalDebt">₹0</h2>
+      <small>Track your progress, one step at a time.</small>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <p>Monthly income</p>
+        <h3 id="totalIncome">₹0</h3>
+      </section>
+      <section class="card">
+        <p>Monthly expenses</p>
+        <h3 id="totalExpenses">₹0</h3>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Your debts</h2>
+      <div id="debtList"><p class="muted">No debts added yet.</p></div>
+      <button id="addDebt" class="action">+ Add a debt</button>
+      <form id="debtForm" hidden>
+        <label>Debt name
+          <input id="debtName" required placeholder="e.g. Personal loan">
+        </label>
+        <label>Outstanding balance (₹)
+          <input id="debtAmount" type="number" min="0.01" step="0.01" required>
+        </label>
+        <label>Interest rate (% per year)
+          <input id="debtRate" type="number" min="0" step="0.01" value="0">
+        </label>
+        <button class="action" type="submit">Save debt</button>
+        <button class="secondary" type="button" id="cancelDebt">Cancel</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Add an expense</h2>
+      <form id="expenseForm">
+        <label>Description
+          <input id="expenseName" required placeholder="e.g. Groceries">
+        </label>
+        <label>Amount (₹)
+          <input id="expenseAmount" type="number" min="0.01" step="0.01" required>
+        </label>
+        <button class="action" type="submit">Add expense</button>
+      </form>
+      <div id="expenseList"></div>
+    </section>
+
+    <section class="card">
+      <h2>Monthly income</h2>
+      <form id="incomeForm">
+        <label>Income source
+          <input id="incomeName" required placeholder="e.g. Salary">
+        </label>
+        <label>Amount (₹)
+          <input id="incomeAmount" type="number" min="0.01" step="0.01" required>
+        </label>
+        <button class="action" type="submit">Add income</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Your savings goal</h2>
+      <form id="goalForm">
+        <label>Goal name
+          <input id="goalName" required placeholder="e.g. Emergency fund">
+        </label>
+        <label>Target amount (₹)
+          <input id="goalAmount" type="number" min="1" step="0.01" required>
+        </label>
+        <button class="action" type="submit">Save goal</button>
+      </form>
+      <div id="goalList"></div>
+    </section>
+
+    <section class="card">
+      <h2>Data & privacy</h2>
+      <p class="muted">Your records are stored in this browser on this device. They are not automatically backed up or synced.</p>
+      <button id="exportData" class="action">Export backup</button>
+      <label class="fileLabel">Restore backup
+        <input type="file" id="importData" accept=".json,application/json">
+      </label>
+      <button id="clearData" class="danger">Delete all app data</button>
+    </section>
+  </main>
+
+  <footer>FREEDOM · Your journey, your future.</footer>
+
+  <script src="script.js"></script>
+  <script>
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
