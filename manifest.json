@@ -1,0 +1,11 @@
+{
+  "name": "FREEDOM Finance",
+  "short_name": "FREEDOM",
+  "description": "Take control of your debts, expenses and savings.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090909",
+  "theme_color": "#090909",
+  "orientation": "portrait"
+}
