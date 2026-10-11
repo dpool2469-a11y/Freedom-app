@@ -1,392 +1,319 @@
-"use strict";
+/* FREEDOM Finance — local-first app logic */
+(() => {
+  "use strict";
 
-const $ = (id) => document.getElementById(id);
+  const STORAGE_KEY = "freedom-finance-data-v1";
+  const $ = (id) => document.getElementById(id);
+  const money = (value) => new Intl.NumberFormat("en-IN", {
+    style: "currency", currency: "INR", maximumFractionDigits: 2
+  }).format(Number(value) || 0);
 
-const STORAGE_KEY = "freedom-finance-data-v1";
+  function safeDate(value) {
+    const d = value ? new Date(value) : new Date();
+    return Number.isNaN(d.getTime()) ? new Date() : d;
+  }
 
-let data = {
-  debts: [],
-  expenses: [],
-  incomes: [],
-  goals: []
-};
+  function newId() {
+    return (globalThis.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
 
-let hideAmounts = false;
+  function blankData() {
+    return { debts: [], expenses: [], income: [], goals: [] };
+  }
 
-function createId() {
-  return Date.now().toString(36) +
-    Math.random().toString(36).slice(2, 8);
-}
+  function normalizeRecord(item, type) {
+    const x = item && typeof item === "object" ? item : {};
+    const name = String(x.name ?? x.title ?? x.description ?? x.source ?? x.label ?? type).slice(0, 100);
+    const amount = Number(x.amount ?? x.balance ?? x.value ?? x.target ?? 0);
+    return {
+      ...x,
+      id: x.id ?? newId(),
+      name,
+      amount: Number.isFinite(amount) && amount >= 0 ? amount : 0,
+      date: x.date ?? x.createdAt ?? x.timestamp ?? new Date().toISOString()
+    };
+  }
 
-function loadData() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    if (saved) {
-      const parsed = JSON.parse(saved);
-
-      if (
-        parsed &&
-        Array.isArray(parsed.debts) &&
-        Array.isArray(parsed.expenses) &&
-        Array.isArray(parsed.incomes) &&
-        Array.isArray(parsed.goals)
-      ) {
-        data = parsed;
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return blankData();
+      const parsed = JSON.parse(raw);
+      const data = blankData();
+      for (const key of Object.keys(data)) {
+        const arr = Array.isArray(parsed[key]) ? parsed[key] : [];
+        data[key] = arr.map(item => normalizeRecord(item, key));
       }
+      // Keep the original object’s extra properties for forward compatibility.
+      return { ...parsed, ...data };
+    } catch (error) {
+      console.error("FREEDOM data could not be read:", error);
+      return blankData();
     }
-  } catch (error) {
-    alert("Could not load saved data. Your existing data may be damaged.");
   }
-}
 
-function saveData() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    render();
-    return true;
-  } catch (error) {
-    alert("Unable to save data. Your browser storage may be full.");
-    return false;
+  let data = loadData();
+
+  function saveData() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      return true;
+    } catch (error) {
+      alert("FREEDOM could not save your data. Your browser storage may be full. Export a backup if possible.");
+      console.error(error);
+      return false;
+    }
   }
-}
 
-function formatMoney(amount) {
-  const value = Number(amount) || 0;
+  function monthMatches(record) {
+    const d = safeDate(record.date);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
 
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 2
-  }).format(value);
-}
+  function total(items, filter = () => true) {
+    return items.filter(filter).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  }
 
-function moneyElement(amount) {
-  const span = document.createElement("span");
-  span.className = "money";
-  span.textContent = formatMoney(amount);
-  return span;
-}
+  function renderTotals() {
+    const debtTotal = total(data.debts);
+    const incomeTotal = total(data.income, monthMatches);
+    const expenseTotal = total(data.expenses, monthMatches);
 
-function createEntry(title, details, amount, onDelete) {
-  const entry = document.createElement("div");
-  entry.className = "entry";
+    if ($("totalDebt")) $("totalDebt").textContent = money(debtTotal);
+    if ($("debtPageTotal")) $("debtPageTotal").textContent = money(debtTotal);
+    if ($("totalIncome")) $("totalIncome").textContent = money(incomeTotal);
+    if ($("totalExpenses")) $("totalExpenses").textContent = money(expenseTotal);
+  }
 
-  const strong = document.createElement("strong");
-  strong.textContent = title;
+  function textElement(tag, className, text) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    el.textContent = text;
+    return el;
+  }
 
-  const small = document.createElement("small");
-  small.textContent = details + " · ";
+  function emptyState(message) {
+    return textElement("div", "empty-state", message);
+  }
 
-  small.appendChild(moneyElement(amount));
-
-  entry.append(strong, small);
-
-  if (onDelete) {
-    const button = document.createElement("button");
+  function deleteButton(type, id) {
+    const button = textElement("button", "danger-button record-delete", "Delete");
     button.type = "button";
-    button.textContent = "Delete";
-
     button.addEventListener("click", () => {
-      if (confirm("Delete this item?")) {
-        onDelete();
-        saveData();
+      if (!confirm("Delete this record? This cannot be undone unless you have a backup.")) return;
+      data[type] = data[type].filter(item => String(item.id) !== String(id));
+      saveData();
+      renderAll();
+    });
+    return button;
+  }
+
+  function renderDebts() {
+    const container = $("debtList");
+    if (!container) return;
+    container.replaceChildren();
+    if (!data.debts.length) {
+      container.append(emptyState("No debts added yet."));
+      return;
+    }
+    data.debts.forEach(debt => {
+      const card = document.createElement("article");
+      card.className = "record-card";
+      card.append(textElement("h3", "", debt.name || "Unnamed debt"));
+      card.append(textElement("p", "", `Annual interest: ${Number(debt.rate ?? debt.interestRate ?? 0)}%`));
+      card.append(textElement("div", "record-value amount", money(debt.amount)));
+      card.append(textElement("p", "", `Added ${safeDate(debt.date).toLocaleDateString("en-IN")}`));
+      card.append(deleteButton("debts", debt.id));
+      container.append(card);
+    });
+  }
+
+  function renderActivity() {
+    const container = $("activityList");
+    const recent = $("recentActivity");
+    const records = [
+      ...data.expenses.map(x => ({ ...x, type: "expense" })),
+      ...data.income.map(x => ({ ...x, type: "income" }))
+    ].sort((a, b) => safeDate(b.date) - safeDate(a.date));
+
+    if (container) {
+      container.replaceChildren();
+      if (!records.length) container.append(emptyState("No activity recorded yet."));
+      else records.forEach(record => container.append(activityCard(record, true)));
+    }
+
+    if (recent) {
+      recent.replaceChildren();
+      if (!records.length) recent.append(emptyState("Your financial activity will appear here."));
+      else records.slice(0, 4).forEach(record => recent.append(activityCard(record, false)));
+    }
+  }
+
+  function activityCard(record, allowDelete) {
+    const isIncome = record.type === "income";
+    const row = document.createElement("div");
+    row.className = allowDelete ? "record-card" : "activity-item";
+    if (allowDelete) {
+      row.append(textElement("h3", "", record.name || (isIncome ? "Income" : "Expense")));
+      row.append(textElement("p", "", safeDate(record.date).toLocaleDateString("en-IN")));
+      row.append(textElement("div", `record-value amount ${isIncome ? "income-color" : "expense-color"}`,
+        `${isIncome ? "+" : "−"}${money(record.amount)}`));
+      row.append(deleteButton(isIncome ? "income" : "expenses", record.id));
+    } else {
+      row.append(textElement("div", "activity-icon", isIncome ? "↗" : "↘"));
+      const info = document.createElement("div");
+      info.className = "activity-info";
+      info.append(textElement("strong", "", record.name || (isIncome ? "Income" : "Expense")));
+      info.append(textElement("small", "", safeDate(record.date).toLocaleDateString("en-IN")));
+      row.append(info);
+      row.append(textElement("div", `activity-amount amount ${isIncome ? "income-color" : "expense-color"}`,
+        `${isIncome ? "+" : "−"}${money(record.amount)}`));
+    }
+    return row;
+  }
+
+  function renderGoals() {
+    const container = $("goalList");
+    if (!container) return;
+    container.replaceChildren();
+    if (!data.goals.length) {
+      container.append(emptyState("No savings goals yet."));
+      return;
+    }
+    data.goals.forEach(goal => {
+      const card = document.createElement("article");
+      card.className = "record-card";
+      card.append(textElement("h3", "", goal.name || "Savings goal"));
+      card.append(textElement("p", "", "Target amount"));
+      card.append(textElement("div", "record-value amount income-color", money(goal.amount)));
+      const progress = document.createElement("progress");
+      progress.max = 100;
+      progress.value = Math.min(100, Math.max(0, Number(goal.savedAmount ?? goal.saved ?? 0) / (Number(goal.amount) || 1) * 100));
+      card.append(progress);
+      const saved = Number(goal.savedAmount ?? goal.saved ?? 0);
+      card.append(textElement("p", "", `${money(saved)} saved · ${Math.round(progress.value)}% of target`));
+      card.append(deleteButton("goals", goal.id));
+      container.append(card);
+    });
+  }
+
+  function renderAll() {
+    renderTotals();
+    renderDebts();
+    renderActivity();
+    renderGoals();
+  }
+
+  function bindForm(formId, type, fields, makeRecord) {
+    const form = $(formId);
+    if (!form) return;
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const nameInput = $(fields.name);
+      const amountInput = $(fields.amount);
+      const name = nameInput ? nameInput.value.trim() : "";
+      const amount = Number(amountInput ? amountInput.value : NaN);
+      if (!name || !Number.isFinite(amount) || amount <= 0) {
+        alert("Please enter a name and an amount greater than zero.");
+        return;
+      }
+      const record = {
+        id: newId(),
+        name,
+        amount,
+        date: new Date().toISOString(),
+        ...makeRecord()
+      };
+      data[type].push(record);
+      if (!saveData()) {
+        data[type].pop();
+        return;
+      }
+      form.reset();
+      renderAll();
+      alert("Saved successfully.");
+    });
+  }
+
+  bindForm("debtForm", "debts", { name: "debtName", amount: "debtAmount" }, () => ({
+    rate: Number($("debtRate")?.value || 0)
+  }));
+  bindForm("expenseForm", "expenses", { name: "expenseName", amount: "expenseAmount" }, () => ({}));
+  bindForm("incomeForm", "income", { name: "incomeName", amount: "incomeAmount" }, () => ({}));
+  bindForm("goalForm", "goals", { name: "goalName", amount: "goalAmount" }, () => ({ savedAmount: 0 }));
+
+  const hideButton = $("hideButton");
+  // The hide button's visual toggle is handled by index.html. This class is
+  // deliberately not toggled here to avoid duplicate click handlers.
+
+  const exportButton = $("exportData");
+  if (exportButton) {
+    exportButton.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `freedom-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showBackupMessage("Backup exported. Keep the file somewhere safe.");
+    });
+  }
+
+  const importInput = $("importData");
+  if (importInput) {
+    importInput.addEventListener("change", async () => {
+      const file = importInput.files && importInput.files[0];
+      if (!file) return;
+      try {
+        const imported = JSON.parse(await file.text());
+        if (!imported || typeof imported !== "object") throw new Error("Invalid backup");
+        const replacement = blankData();
+        for (const key of Object.keys(replacement)) {
+          if (!Array.isArray(imported[key])) throw new Error(`Backup is missing ${key}`);
+          replacement[key] = imported[key].map(item => normalizeRecord(item, key));
+        }
+        if (!confirm("Restore this backup? It will replace the records currently stored in this browser.")) {
+          importInput.value = "";
+          return;
+        }
+        data = { ...imported, ...replacement };
+        if (saveData()) {
+          renderAll();
+          showBackupMessage("Backup restored successfully.");
+        }
+      } catch (error) {
+        alert("That backup file could not be read. Please select a valid FREEDOM JSON backup.");
+        console.error(error);
+      } finally {
+        importInput.value = "";
       }
     });
-
-    entry.appendChild(button);
   }
 
-  return entry;
-}
-
-function renderList(containerId, items, builder) {
-  const container = $(containerId);
-  container.replaceChildren();
-
-  if (!items.length) {
-    const message = document.createElement("p");
-    message.className = "muted";
-    message.textContent = "Nothing added yet.";
-    container.appendChild(message);
-    return;
-  }
-
-  items.forEach((item) => {
-    container.appendChild(builder(item));
-  });
-}
-
-function render() {
-  const totalDebt = data.debts.reduce(
-    (sum, item) => sum + Number(item.amount || 0), 0
-  );
-
-  const totalIncome = data.incomes.reduce(
-    (sum, item) => sum + Number(item.amount || 0), 0
-  );
-
-  const currentMonth = new Date().toISOString().slice(0, 7);
-
-  const totalExpenses = data.expenses
-    .filter(item => item.date && item.date.startsWith(currentMonth))
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
-
-  $("totalDebt").textContent = formatMoney(totalDebt);
-  $("totalIncome").textContent = formatMoney(totalIncome);
-  $("totalExpenses").textContent = formatMoney(totalExpenses);
-
-  renderList("debtList", data.debts, item =>
-    createEntry(
-      item.name,
-      "Interest: " + item.rate + "% per year",
-      item.amount,
-      () => {
-        data.debts = data.debts.filter(x => x.id !== item.id);
-      }
-    )
-  );
-
-  renderList("expenseList", data.expenses, item =>
-    createEntry(
-      item.name,
-      item.date,
-      item.amount,
-      () => {
-        data.expenses = data.expenses.filter(x => x.id !== item.id);
-      }
-    )
-  );
-
-  renderList("goalList", data.goals, item =>
-    createEntry(
-      item.name,
-      "Savings target",
-      item.amount,
-      () => {
-        data.goals = data.goals.filter(x => x.id !== item.id);
-      }
-    )
-  );
-
-  document.body.classList.toggle("hide-amounts", hideAmounts);
-  $("hideButton").textContent = hideAmounts ? "◌" : "◉";
-}
-
-$("addDebt").addEventListener("click", () => {
-  $("debtForm").hidden = false;
-  $("debtName").focus();
-});
-
-$("cancelDebt").addEventListener("click", () => {
-  $("debtForm").reset();
-  $("debtForm").hidden = true;
-});
-
-$("debtForm").addEventListener("submit", event => {
-  event.preventDefault();
-
-  const name = $("debtName").value.trim();
-  const amount = Number($("debtAmount").value);
-  const rate = Number($("debtRate").value);
-
-  if (!name || !Number.isFinite(amount) || amount <= 0 ||
-      !Number.isFinite(rate) || rate < 0) {
-    alert("Enter a valid debt name, balance and interest rate.");
-    return;
-  }
-
-  data.debts.push({
-    id: createId(),
-    name,
-    amount,
-    rate
-  });
-
-  if (saveData()) {
-    $("debtForm").reset();
-    $("debtForm").hidden = true;
-  }
-});
-
-$("expenseForm").addEventListener("submit", event => {
-  event.preventDefault();
-
-  const name = $("expenseName").value.trim();
-  const amount = Number($("expenseAmount").value);
-
-  if (!name || !Number.isFinite(amount) || amount <= 0) {
-    alert("Enter a valid expense and amount.");
-    return;
-  }
-
-  data.expenses.push({
-    id: createId(),
-    name,
-    amount,
-    date: new Date().toISOString().slice(0, 10)
-  });
-
-  if (saveData()) {
-    $("expenseForm").reset();
-  }
-});
-
-$("incomeForm").addEventListener("submit", event => {
-  event.preventDefault();
-
-  const name = $("incomeName").value.trim();
-  const amount = Number($("incomeAmount").value);
-
-  if (!name || !Number.isFinite(amount) || amount <= 0) {
-    alert("Enter a valid income source and amount.");
-    return;
-  }
-
-  data.incomes.push({
-    id: createId(),
-    name,
-    amount,
-    date: new Date().toISOString().slice(0, 10)
-  });
-
-  if (saveData()) {
-    $("incomeForm").reset();
-  }
-});
-
-$("goalForm").addEventListener("submit", event => {
-  event.preventDefault();
-
-  const name = $("goalName").value.trim();
-  const amount = Number($("goalAmount").value);
-
-  if (!name || !Number.isFinite(amount) || amount <= 0) {
-    alert("Enter a valid goal and target amount.");
-    return;
-  }
-
-  data.goals.push({
-    id: createId(),
-    name,
-    amount
-  });
-
-  if (saveData()) {
-    $("goalForm").reset();
-  }
-});
-
-$("hideButton").addEventListener("click", () => {
-  hideAmounts = !hideAmounts;
-  render();
-});
-
-$("exportData").addEventListener("click", () => {
-  const backup = {
-    app: "FREEDOM",
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    data
-  };
-
-  const blob = new Blob(
-    [JSON.stringify(backup, null, 2)],
-    { type: "application/json" }
-  );
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = "freedom-backup.json";
-  link.click();
-
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-});
-
-$("importData").addEventListener("change", async event => {
-  const file = event.target.files[0];
-
-  if (!file) return;
-
-  try {
-    const text = await file.text();
-    const backup = JSON.parse(text);
-    const imported = backup.data || backup;
-
-    if (
-      !imported ||
-      !Array.isArray(imported.debts) ||
-      !Array.isArray(imported.expenses) ||
-      !Array.isArray(imported.incomes) ||
-      !Array.isArray(imported.goals)
-    ) {
-      throw new Error("Invalid backup format");
-    }
-
-    const validItems = (items) =>
-      items.every(item =>
-        item &&
-        typeof item.name === "string" &&
-        Number.isFinite(Number(item.amount)) &&
-        Number(item.amount) >= 0
-      );
-
-    if (
-      !validItems(imported.debts) ||
-      !validItems(imported.expenses) ||
-      !validItems(imported.incomes) ||
-      !validItems(imported.goals)
-    ) {
-      throw new Error("Invalid backup entries");
-    }
-
-    if (confirm("Restore backup? This replaces your current app records.")) {
-      const previousData = data;
-
-      data = {
-        debts: imported.debts,
-        expenses: imported.expenses,
-        incomes: imported.incomes,
-        goals: imported.goals
-      };
-
+  const clearButton = $("clearData");
+  if (clearButton) {
+    clearButton.addEventListener("click", () => {
+      if (!confirm("Delete ALL FREEDOM records saved in this browser? Export a backup first if you may need them.")) return;
+      data = blankData();
       if (saveData()) {
-        alert("Backup restored successfully.");
-      } else {
-        data = previousData;
-        render();
+        renderAll();
+        showBackupMessage("All FREEDOM records have been deleted.");
       }
-    }
-  } catch (error) {
-    alert("Could not restore this file. Please select a valid FREEDOM backup.");
-  } finally {
-    event.target.value = "";
-  }
-});
-
-$("clearData").addEventListener("click", () => {
-  if (!confirm("Delete ALL FREEDOM records stored in this browser? Export a backup first if you need your records.")) {
-    return;
+    });
   }
 
-  const previousData = data;
-
-  data = {
-    debts: [],
-    expenses: [],
-    incomes: [],
-    goals: []
-  };
-
-  if (saveData()) {
-    alert("All app records have been deleted.");
-  } else {
-    data = previousData;
-    render();
+  function showBackupMessage(message) {
+    const el = $("backupMessage");
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = message;
   }
-});
 
-loadData();
-render();
+  renderAll();
+})();
