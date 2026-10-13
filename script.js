@@ -85,6 +85,14 @@
     const expenseTotal = total(data.expenses, monthMatches);
 
     if ($("totalDebt")) $("totalDebt").textContent = money(debtTotal);
+    if ($("homeDebtTotal")) $("homeDebtTotal").textContent = money(debtTotal);
+    if ($("homeAssetsTotal")) $("homeAssetsTotal").textContent = money(total(data.assets));
+    if ($("homeNetWorth")) {
+      const netWorth = total(data.assets) - debtTotal;
+      $("homeNetWorth").textContent = money(netWorth);
+      $("homeNetWorth").style.color = "#f4f6f8";
+      $("homeNetWorth").setAttribute("aria-label", `Estimated net worth ${money(netWorth)}`);
+    }
     if ($("debtPageTotal")) $("debtPageTotal").textContent = money(debtTotal);
     if ($("totalIncome")) $("totalIncome").textContent = money(incomeTotal);
     if ($("totalExpenses")) $("totalExpenses").textContent = money(expenseTotal);
@@ -256,14 +264,42 @@
 
   // New tools are stored alongside the original local-first records.
   function addAssetForm() {
-    const form = $("assetForm"); if (!form) return;
+    const form = $("assetForm");
+    if (!form) return;
     form.addEventListener("submit", e => {
       e.preventDefault();
-      const name = $("assetName").value.trim(), amount = Number($("assetAmount").value);
-      if (!name || !Number.isFinite(amount) || amount <= 0) return alert("Enter an asset name and a value above zero.");
-      data.assets.push({ id: newId(), name, amount, category: $("assetCategory").value, date: new Date().toISOString() });
-      if (!saveData()) { data.assets.pop(); return; }
-      form.reset(); renderAll(); alert("Asset saved.");
+      const nameEl = $("assetName"), amountEl = $("assetAmount"), categoryEl = $("assetCategory");
+      const name = nameEl ? nameEl.value.trim() : "";
+      const amount = Number(amountEl ? amountEl.value : NaN);
+      const category = categoryEl ? categoryEl.value : "Other asset";
+      if (!name || !Number.isFinite(amount) || amount <= 0) {
+        alert("Enter an asset name and a value greater than zero.");
+        return;
+      }
+      const record = { id: newId(), name, amount, category, date: new Date().toISOString() };
+      data.assets.push(record);
+      if (!saveData()) {
+        data.assets = data.assets.filter(item => item.id !== record.id);
+        return;
+      }
+      // Verify the browser actually persisted the asset before clearing the form.
+      try {
+        const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        if (!Array.isArray(stored.assets) || !stored.assets.some(item => item.id === record.id)) {
+          data.assets = data.assets.filter(item => item.id !== record.id);
+          alert("The browser did not confirm saving this asset. Please export a backup and check browser storage settings.");
+          return;
+        }
+      } catch (error) {
+        console.error("Asset save verification failed:", error);
+        alert("The asset may not have saved. Please check browser storage and try again.");
+        return;
+      }
+      form.reset();
+      renderAll();
+      const note = $("assetSaveNotice");
+      if (note) note.textContent = `Saved ${name}. Your asset total and net worth have been updated on this device.`;
+      alert("Asset saved on this device.");
     });
   }
   function renderNetWorth() {
