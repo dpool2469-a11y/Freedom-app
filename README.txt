@@ -1,14 +1,28 @@
-FREEDOM PLUS — GitHub Pages upgrade
+FREEDOM COMPLETE — GitHub Pages / Android PWA
 
-Files in this package are intended to replace the matching root files in your existing Freedom-app repository. Keep your existing repository and do not delete it.
+INCLUDED
+- Net worth calculation = saved assets minus outstanding debts.
+- Asset and debt records with local persistence.
+- Monthly budget, expenses and suggested daily allowance.
+- Savings contributions.
+- Loan extra-payment and lump-sum comparison estimates.
+- Activity history and JSON backup/restore.
+- CIBIL page design with official CIBIL link and truthful integration status.
+- Responsive dark UI, bottom navigation and mobile swipe navigation.
 
-Upload/replace: index.html, style.css, script.js, manifest.json, service-worker.js, and the icons/ folder.
+IMPORTANT DATA SAFETY
+The app intentionally uses the existing localStorage key: freedom-finance-data-v1.
+Before replacing files, export a backup from the existing app if it still opens. Do not clear site data. This app runs locally in the browser; records are not synced between devices.
 
-Features added: assets and estimated net worth (assets minus saved debt balances); monthly budget with remaining daily spending guide; loan extra-payment comparison; high-interest-first loan ordering guidance; CIBIL-style personal report tracker based on user-entered values.
+INSTALL / UPDATE ON GITHUB
+1. Extract this ZIP on your phone.
+2. Open the FREEDOM-Complete folder.
+3. Upload/replace index.html, style.css, script.js, manifest.json, service-worker.js and the icons folder in the ROOT of your GitHub repository (dpool2469-a11y/Freedom-app), then commit to the publishing branch.
+4. Wait for GitHub Pages to publish and reopen https://dpool2469-a11y.github.io/Freedom-app/.
+5. If an installed PWA shows old UI, fully close it and reopen. Do not clear storage; export backup first.
 
-IMPORTANT:
-- Back up existing data first via More > Export backup. New tools extend the same localStorage key and should preserve current records, but always export a backup before replacing files.
-- Net worth is an estimate. Update asset valuations and debt balances manually. Income is not an asset; cash/bank balance and retained savings are assets.
-- Loan results are estimates only. Confirm prepayment charges, amortisation and exact interest with your lender.
-- The CIBIL page does NOT fetch or verify a real credit score. Enter details from an official report. Use the official CIBIL link inside the app for an actual report.
-- Static GitHub Pages does not provide encrypted storage or cross-device sync.
+CIBIL LIMITATION
+The app does not currently retrieve actual CIBIL data. Real automatic CIBIL score/report updates require an authorized CIBIL/report-provider integration, user consent/verification and a secure backend. Do not put provider secrets or PAN/OTP collection in this static website. The CIBIL button opens the official CIBIL free score/report page.
+
+LOAN ESTIMATES
+The loan planner uses a simplified monthly reducing-balance estimate. Lender calculations can differ due to fees, daily interest, payment dates and changing rates. It is an estimate, not a lender quote.
