@@ -32,3 +32,4 @@ label{display:block;margin:8px 0;color:var(--d);font-size:.85em}label input,labe
 .sheet{width:100%;max-width:560px;height:78vh;display:flex;flex-direction:column;background:linear-gradient(160deg,var(--s2),var(--s1));border:1px solid var(--ln);border-radius:28px 28px 0 0;padding:16px;animation:up .25s ease}
 #msgs{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:12px 0}.bb{max-width:86%;padding:10px 14px;border-radius:18px}.bb.t{background:#ffffff0f;border:1px solid var(--ln);align-self:flex-start}.bb.u{background:#f2f4f8;color:#0a0a0a;align-self:flex-end}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:6px 0}.chips button{white-space:nowrap;min-height:36px;padding:6px 14px;border-radius:999px;font-size:.8em}#cf{display:flex;gap:8px;padding-bottom:env(safe-area-inset-bottom)}#cf input{flex:1}
+.tile[data-act]{cursor:pointer;transition:transform .12s}.tile[data-act]:active{transform:scale(.97)}
